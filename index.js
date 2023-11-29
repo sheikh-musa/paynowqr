@@ -1,26 +1,15 @@
-const http = require("http");
-const fs = require("fs");
-const path = require("path");
+const express = require("express");
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-const PORT = process.env.PORT || 3000; // Use the environment variable for PORT
+// Serve static files from the 'public' directory
+app.use(express.static("public"));
 
-const server = http.createServer((req, res) => {
-  if (req.url === "/" || req.url === "/index.html") {
-    fs.readFile(path.join(__dirname, "public", "index.html"), (err, data) => {
-      if (err) {
-        res.writeHead(500);
-        res.end("Error loading index.html");
-      } else {
-        res.writeHead(200, { "Content-Type": "text/html" });
-        res.end(data);
-      }
-    });
-  } else {
-    res.writeHead(404);
-    res.end("Not Found");
-  }
+// Fallback or main route
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/public/index.html");
 });
 
-server.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}/`);
 });
