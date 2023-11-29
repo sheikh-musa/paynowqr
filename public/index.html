@@ -5,36 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Paynow</title>
     <script src="js/paynow.js"></script>
-    <script src="js/qrcode.js"></script>
+    <!-- <script src="js/qrcode.js"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
     <script>
       function generate_qr_code(str, divId) {
         // Clear existing QR code if any
         var qrContainer = document.getElementById(divId);
         qrContainer.innerHTML = "";
 
-        // Create QR code
-        var qrCode = new QRCode(qrContainer, {
-          text: str,
-          width: 250,
-          height: 250,
-          colorDark: "#000000",
-          colorLight: "#ffffff",
-          correctLevel: QRCode.CorrectLevel.H,
-        });
+        // // Create QR code
+        // var qrCode = new QRCode(qrContainer, {
+        //   text: str,
+        //   width: 250,
+        //   height: 250,
+        //   colorDark: "#000000",
+        //   colorLight: "#ffffff",
+        //   correctLevel: QRCode.CorrectLevel.H,
+        // });
 
-        // Add click event listener to the QR code
-        var qrImg = qrContainer.querySelector("img");
-        if (qrImg) {
-          qrImg.style.cursor = "pointer";
-          qrImg.addEventListener("click", function () {
-            downloadImage(qrImg.src, "QRCode.png");
+        // // Add click event listener to the QR code
+        // var qrImg = qrContainer.querySelector("img");
+        // if (qrImg) {
+        //   qrImg.style.cursor = "pointer";
+        //   qrImg.addEventListener("click", function () {
+        //     downloadImage(qrImg.src, "QRCode.png");
+        //   });
+        // }
+
+        // // Add "Click to save" instructions below the QR code
+        // var instructionText = document.createElement("p");
+        // instructionText.innerText = "Click QR code to save";
+        // qrContainer.appendChild(instructionText);
+
+        // Generate QR Code using qrcode library
+        QRCode.toDataURL(str, { width: 250, height: 250, colorDark: "#000000", colorLight: "#ffffff" })
+          .then((url) => {
+            var img = document.createElement("img");
+            img.src = url;
+            img.style.cursor = "pointer";
+            img.addEventListener("click", function () {
+              downloadImage(url, "QRCode.png");
+            });
+            qrContainer.appendChild(img);
+
+            var instructionText = document.createElement("p");
+            instructionText.innerText = "Click QR code to save";
+            qrContainer.appendChild(instructionText);
+          })
+          .catch((err) => {
+            console.error(err);
+            // handle error case here
           });
-        }
-
-        // Add "Click to save" instructions below the QR code
-        var instructionText = document.createElement("p");
-        instructionText.innerText = "Click QR code to save";
-        qrContainer.appendChild(instructionText);
       }
 
       function downloadImage(data, filename) {
@@ -68,7 +89,7 @@
           refNumber: reference,
           type: type,
         };
-
+        console.log(opts);
         const qrstr = generatePayNowStr(opts);
         // console.log(opts);
         generate_qr_code(qrstr, "qrcode");

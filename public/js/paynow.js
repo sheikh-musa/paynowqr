@@ -110,3 +110,5 @@ function generatePayNowStr(opts) {
 
   return str;
 }
+
+module.exports = generatePayNowStr;
