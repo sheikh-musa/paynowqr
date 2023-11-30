@@ -24,6 +24,11 @@ app.get("/", (req, res) => {
 app.post("/generate-qr", (req, res) => {
   const data = req.body || req.query;
 
+  // Validate input
+  if (!validateInput(data)) {
+    return res.status(400).send("Invalid input parameters");
+  }
+
   const qrString = generatePayNowStr(data);
   const tempFileName = `qr-${Date.now()}.png`;
   const tempFilePath = path.join(tempDir, tempFileName);
@@ -37,6 +42,22 @@ app.post("/generate-qr", (req, res) => {
     res.sendFile(tempFilePath);
   });
 });
+
+function validateInput(data) {
+  // Check if all required fields are present
+  if (!data.type || !data.number || !data.amount || !data.reference) {
+    return false;
+  }
+
+  // Validate 'type' - should be either 'uen' or 'mobile'
+  if (data.type !== "uen" && data.type !== "mobile") {
+    return false;
+  }
+
+  // Add more validation as needed, e.g., check format of 'number', 'amount', 'reference'
+
+  return true;
+}
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}/`);

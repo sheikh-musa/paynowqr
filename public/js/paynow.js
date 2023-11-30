@@ -41,6 +41,14 @@ function crc16(s) {
   return ((crc ^ 0) & 0xffff).toString(16).toUpperCase().padStart(4, "0");
 }
 
+function getTodaysDateFormatted() {
+  var today = new Date();
+  var year = today.getFullYear();
+  var month = ("0" + (today.getMonth() + 1)).slice(-2);
+  var day = ("0" + today.getDate()).slice(-2);
+  return year + month + day;
+}
+
 function generatePayNowStr(opts) {
   const p = [
     { id: "00", value: "01" }, // ID 00: Payload Format Indicator (Fixed to '01')
@@ -50,10 +58,12 @@ function generatePayNowStr(opts) {
       // ID 26: Merchant Account Info Template
       value: [
         { id: "00", value: "SG.PAYNOW" },
-        { id: "01", value: opts.type }, // 0 for mobile, 2 for UEN. 1 is not used.
-        { id: "02", value: opts.uen }, // PayNow UEN (Company Unique Entity Number)
-        { id: "03", value: opts.editable.toString() }, // 1 = Payment amount is editable, 0 = Not Editable
-        { id: "04", value: opts.expiry },
+        // { id: "01", value: opts.type }, // 0 for mobile, 2 for UEN. 1 is not used.
+        { id: "01", value: opts.type === "mobile" ? "0" : "2" },
+        // { id: "02", value: opts.number }, // UEN or mobile number
+        { id: "02", value: opts.type === "mobile" ? "+65" + opts.number : opts.number },
+        { id: "03", value: "0" }, // 1 = Payment amount is editable, 0 = Not Editable hardcoded
+        { id: "04", value: getTodaysDateFormatted() }, //hardcoded to today's date
       ], // Expiry date (YYYYMMDD)
     },
     { id: "52", value: "0000" }, // ID 52: Merchant Category Code (not used)
@@ -68,11 +78,12 @@ function generatePayNowStr(opts) {
         {
           // ID 62: Additional data fields
           id: "01",
-          value: opts.refNumber, // ID 01: Bill Number
+          value: opts.reference, // ID 01: Bill Number
         },
       ],
     },
   ];
+  // console.log(p);
 
   let str = p.reduce((final, current) => {
     if (Array.isArray(current.value)) {
@@ -86,21 +97,23 @@ function generatePayNowStr(opts) {
     return final;
   }, "");
 
-  //   let str = p.reduce((final, current) => {
-  //     if (Array.isArray(current.value)) {
-  //       //nest loop
-  //       current.value = current.value.reduce((f, c) => {
-  //         if (c && c.value) {
-  //           f += c.id + c.value.length.toString().padStart(2, "0") + c.value;
-  //         }
-  //         return f;
-  //       }, "");
+  // let str = p.reduce((final, current) => {
+  //   if (Array.isArray(current.value)) {
+  //     current.value = current.value.reduce((f, c) => {
+  //       // Check if c.value is defined
+  //       if (c.value !== undefined && c.value !== null) {
+  //         f += c.id + c.value.length.toString().padLeft(2) + c.value;
+  //       }
+  //       return f;
+  //     }, "");
+  //   } else {
+  //     // Check if current.value is defined
+  //     if (current.value !== undefined && current.value !== null) {
+  //       final += current.id + current.value.length.toString().padLeft(2) + current.value;
   //     }
-  //     if (current && current.value) {
-  //       final += current.id + current.value.length.toString().padStart(2, "0") + current.value;
-  //     }
-  //     return final;
-  //   }, "");
+  //   }
+  //   return final;
+  // }, "");
 
   // Here we add "6304" to the previous string
   // ID 63 (Checksum) 04 (4 characters)
