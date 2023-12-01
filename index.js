@@ -22,7 +22,6 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Function to generate a QR code
 function generateQRCode(data, callback) {
   const qrString = generatePayNowStr(data);
   const tempFileName = `qr-${Date.now()}.png`;
@@ -33,7 +32,9 @@ function generateQRCode(data, callback) {
       console.error(err); // Log the error
       callback(err);
     } else {
-      callback(null, tempFilePath); // Successfully generated QR code
+      // Convert the file path to a URL accessible from the client
+      const accessibleUrl = `/temp/${tempFileName}`;
+      callback(null, accessibleUrl); // Send the URL (not the file system path)
     }
   });
 }
