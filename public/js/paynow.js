@@ -41,11 +41,16 @@ function crc16(s) {
   return ((crc ^ 0) & 0xffff).toString(16).toUpperCase().padStart(4, "0");
 }
 
-function getTodaysDateFormatted() {
-  var today = new Date();
-  var year = today.getFullYear();
-  var month = ("0" + (today.getMonth() + 1)).slice(-2);
-  var day = ("0" + today.getDate()).slice(-2);
+function getTodaysDateFormattedSGT() {
+  var now = new Date();
+  var sgtOffset = 8 * 60; // Singapore is GMT+8
+  var utc = now.getTime() + now.getTimezoneOffset() * 60000; // Convert local time to UTC
+  var sgt = new Date(utc + 3600000 * sgtOffset); // Convert UTC to Singapore Time
+
+  var year = sgt.getFullYear();
+  var month = ("0" + (sgt.getMonth() + 1)).slice(-2);
+  var day = ("0" + sgt.getDate()).slice(-2);
+
   return year + month + day;
 }
 
@@ -63,7 +68,7 @@ function generatePayNowStr(opts) {
         // { id: "02", value: opts.number }, // UEN or mobile number
         { id: "02", value: opts.type === "mobile" ? "+65" + opts.number : opts.number },
         { id: "03", value: "0" }, // 1 = Payment amount is editable, 0 = Not Editable hardcoded
-        { id: "04", value: getTodaysDateFormatted() }, //hardcoded to today's date
+        { id: "04", value: getTodaysDateFormattedSGT() }, //hardcoded to today's date
       ], // Expiry date (YYYYMMDD)
     },
     { id: "52", value: "0000" }, // ID 52: Merchant Category Code (not used)
