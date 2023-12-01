@@ -41,7 +41,7 @@ app.post("/generate-qr", (req, res) => {
     }
     // After QR code is generated, call Google Script Web App
     axios
-      .post("https://script.google.com/macros/s/AKfycbzI8MpdYQ5RYIsf27n7L4KakgPSt012jsg-QAQshnudbkkOVgHsSzMCmnkBrOhUDVx1Ug/exec")
+      .post("https://script.google.com/macros/s/AKfycbx9vhWuzpnWQFetCdVVkw5FoNHhlUDHna7HPLxOjNZHb1QqQBTm5ws1RAy7VYuSj_lzlg/exec")
       .then((response) => {
         // You can handle the response from Google Script here
         console.log("Payment check initiated:", response.data);
