@@ -5,6 +5,7 @@ const path = require("path");
 const fs = require("fs");
 const generatePayNowStr = require("./public/js/paynow.js");
 const QRCode = require("qrcode");
+const axios = require("axios");
 
 // Ensure temp directory exists
 const tempDir = path.join(__dirname, "public", "temp");
@@ -38,6 +39,16 @@ app.post("/generate-qr", (req, res) => {
       console.error(err); // Log the error
       return res.status(500).send("Error generating QR code");
     }
+    // After QR code is generated, call Google Script Web App
+    axios
+      .post("https://script.google.com/macros/s/AKfycbyRuSyjov8itdi5LYdRA_Z86uxZ6PGQx0xASBcmxJidzniT3KDtQjxvpfgzgWIyKep-/exec")
+      .then((response) => {
+        // You can handle the response from Google Script here
+        console.log("Payment check initiated:", response.data);
+      })
+      .catch((error) => {
+        console.error("Error triggering Google Script:", error);
+      });
 
     res.sendFile(tempFilePath);
   });
