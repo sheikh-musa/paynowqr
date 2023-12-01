@@ -22,6 +22,23 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+// Function to generate a QR code
+function generateQRCode(data, callback) {
+  const qrString = generatePayNowStr(data);
+  const tempFileName = `qr-${Date.now()}.png`;
+  const tempFilePath = path.join(tempDir, tempFileName);
+
+  QRCode.toFile(tempFilePath, qrString, (err) => {
+    if (err) {
+      console.error(err); // Log the error
+      callback(err);
+    } else {
+      callback(null, tempFilePath); // Successfully generated QR code
+    }
+  });
+}
+
+// Endpoint to generate QR code
 app.post("/generate-qr", (req, res) => {
   const data = req.body || req.query;
 
@@ -30,35 +47,49 @@ app.post("/generate-qr", (req, res) => {
     return res.status(400).send("Invalid input parameters");
   }
 
-  const qrString = generatePayNowStr(data);
-  const tempFileName = `qr-${Date.now()}.png`;
-  const tempFilePath = path.join(tempDir, tempFileName);
-
-  QRCode.toFile(tempFilePath, qrString, (err) => {
+  generateQRCode(data, (err, tempFilePath) => {
     if (err) {
-      console.error(err); // Log the error
       return res.status(500).send("Error generating QR code");
     }
+
     // After QR code is generated, call Google Script Web App
     axios
-      .post("https://script.google.com/macros/s/AKfycbx9vhWuzpnWQFetCdVVkw5FoNHhlUDHna7HPLxOjNZHb1QqQBTm5ws1RAy7VYuSj_lzlg/exec")
+      .post("https://script.google.com/macros/s/AKfycbxah2q1rIQmhEwQdb0ZLvSTgBMLDfcsJ4elai2RBqf9/dev")
       .then((response) => {
-        // You can handle the response from Google Script here
         console.log("Payment check initiated:", response.data);
       })
       .catch((error) => {
         console.error("Error triggering Google Script:", error);
       });
 
-    res.sendFile(tempFilePath);
+    // Send back the path to the QR code image
+    res.json({ qrImagePath: tempFilePath });
   });
 });
 
+let paymentStatus = {}; // Object to store payment status by reference number
+
 app.post("/payment-confirmation", (req, res) => {
+  // When payload is received from Google Script
   const payload = req.body;
-  // Process the payload for payment confirmation
-  // ...
+  // Process and store the payment status
+  const referenceNumber = payload.referenceNumber; // assuming payload contains a reference number
+  paymentStatus[referenceNumber] = {
+    confirmed: true, // or whatever logic you have to determine this
+    // ... other details if necessary
+  };
   res.send("Payment confirmation processed");
+});
+
+// Additional endpoint to check payment status
+app.get("/check-payment-status/:referenceNumber", (req, res) => {
+  const referenceNumber = req.params.referenceNumber;
+  const status = paymentStatus[referenceNumber];
+  if (status) {
+    res.json(status);
+  } else {
+    res.json({ confirmed: false });
+  }
 });
 
 function validateInput(data) {

@@ -48,15 +48,97 @@
         var reference = document.getElementById("reference").value;
         var type = document.querySelector('input[name="mobileUen"]:checked').value;
 
-        const opts = {
+        const payload = {
           number: number,
           amount: amount,
           reference: reference,
           type: type,
         };
-        // console.log(opts);
-        const qrstr = generatePayNowStr(opts);
-        generate_qr_code(qrstr, "qrcode");
+
+        // Call backend API to generate QR code
+        fetch("/generate-qr", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.qrImagePath) {
+              // If the backend successfully generates the QR code
+              onQRCodeGenerated(data.qrImagePath);
+            } else {
+              // Handle error case
+              updateUIForError("Error generating QR code.");
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            updateUIForError("Error generating QR code.");
+          });
+      }
+
+      function onQRCodeGenerated(qrImagePath) {
+        // Display QR Code
+        var qrContainer = document.getElementById("qrcode");
+        qrContainer.innerHTML = `<img src="${qrImagePath}" alt="QR Code">`;
+
+        // Start a timer for 180 seconds (3 minutes)
+        let timeLeft = 180;
+        const timerDisplay = document.getElementById("timerDisplay");
+        timerDisplay.innerText = `Time remaining: ${timeLeft} seconds`;
+
+        const timerInterval = setInterval(() => {
+          timeLeft -= 1;
+          timerDisplay.innerText = `Time remaining: ${timeLeft} seconds`;
+
+          if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            timerDisplay.innerText = "";
+            checkPaymentStatus();
+          }
+        }, 1000);
+      }
+
+      function checkPaymentStatus() {
+        // Make an AJAX request to your /payment-confirmation endpoint
+        fetch("/payment-confirmation", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            /* Payload if needed */
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            // Process the response data
+            if (data.paymentConfirmed) {
+              updateUIForPaymentConfirmation();
+            } else {
+              updateUIForPaymentFailure();
+            }
+          })
+          .catch((error) => {
+            console.error("Error checking payment status:", error);
+            updateUIForPaymentFailure();
+          });
+      }
+
+      function updateUIForPaymentConfirmation() {
+        const statusMessage = document.getElementById("statusMessage");
+        statusMessage.innerText = "Payment confirmed. Thank you!";
+
+        // Clear the QR code
+        const qrCodeContainer = document.getElementById("qrCodeContainer");
+        qrCodeContainer.innerHTML = "";
+      }
+
+      function updateUIForError(message) {
+        const statusMessage = document.getElementById("statusMessage");
+        statusMessage.innerText = message;
       }
     </script>
   </head>
@@ -81,5 +163,7 @@
     </div>
     <br /><br />
     <div id="qrcode"></div>
+    <p id="statusMessage"></p>
+    <p id="timerDisplay"></p>
   </body>
 </html>
