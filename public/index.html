@@ -76,7 +76,7 @@
           .then((data) => {
             if (data.qrImagePath) {
               // If the backend successfully generates the QR code
-              onQRCodeGenerated(data.qrImagePath);
+              onQRCodeGenerated(data.qrImagePath, data.referenceNumber);
             } else {
               // Handle error case
               updateUIForError("Error generating QR code.");
@@ -105,34 +105,42 @@
         const timerDisplay = document.getElementById("timerDisplay");
         timerDisplay.innerText = `Time remaining: ${timeLeft} seconds`;
 
-        const timerInterval = setInterval(() => {
+        // Timer for countdown display (every second)
+        const countdownInterval = setInterval(() => {
           timeLeft -= 1;
           timerDisplay.innerText = `Time remaining: ${timeLeft} seconds`;
 
           if (timeLeft <= 0) {
-            clearInterval(timerInterval);
-            timerDisplay.innerText = "";
-            checkPaymentStatus();
+            clearInterval(countdownInterval);
+            clearInterval(pollingInterval); // Stop polling if time runs out
+            timerDisplay.innerText = "Time expired. Please try again.";
+            // Add any additional logic for timeout here
           }
         }, 1000);
+
+        // Timer for polling payment status (every 5 seconds)
+        const pollingInterval = setInterval(() => {
+          checkPaymentStatus(referenceNumber, (confirmed) => {
+            if (confirmed) {
+              clearInterval(countdownInterval);
+              clearInterval(pollingInterval);
+              timerDisplay.innerText = "";
+            }
+          });
+        }, 5000); // Polling every 5 seconds
       }
 
-      function checkPaymentStatus() {
-        const referenceNumber = document.getElementById("hiddenReferenceNumber").value;
-
+      function checkPaymentStatus(referenceNumber, callback) {
         fetch(`/check-payment-status/${referenceNumber}`)
           .then((response) => response.json())
           .then((data) => {
-            // Process the response data
             if (data.confirmed) {
+              callback(true);
               updateUIForPaymentConfirmation();
-            } else {
-              updateUIForPaymentFailure();
             }
           })
           .catch((error) => {
             console.error("Error checking payment status:", error);
-            updateUIForPaymentFailure();
           });
       }
 
