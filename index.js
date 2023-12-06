@@ -63,8 +63,9 @@ app.post("/generate-qr", (req, res) => {
         console.error("Error triggering Google Script:", error);
       });
 
-    // Send back the path to the QR code image
-    res.json({ qrImagePath: tempFilePath });
+    // Send back the full URL to the QR code image
+    const qrImageURL = `${req.protocol}://${req.get("host")}${tempFilePath}`;
+    res.json({ qrImagePath: qrImageURL });
   });
 });
 
@@ -93,6 +94,11 @@ app.get("/check-payment-status/:referenceNumber", (req, res) => {
   }
 });
 
+app.get("/clean-temp-folder", (req, res) => {
+  cleanupTempFolder();
+  res.send("Temp folder cleaned up");
+});
+
 function validateInput(data) {
   // Check if all required fields are present
   if (!data.type || !data.number || !data.amount || !data.reference) {
@@ -107,6 +113,20 @@ function validateInput(data) {
   // Add more validation as needed, e.g., check format of 'number', 'amount', 'reference'
 
   return true;
+}
+
+function cleanupTempFolder() {
+  fs.readdir(tempDir, (err, files) => {
+    if (err) throw err;
+
+    for (const file of files) {
+      if (path.extname(file) === ".png") {
+        fs.unlink(path.join(tempDir, file), (err) => {
+          if (err) throw err;
+        });
+      }
+    }
+  });
 }
 
 app.listen(PORT, () => {

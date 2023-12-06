@@ -7,6 +7,15 @@
     <script src="js/paynow.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
     <script>
+      document.addEventListener("DOMContentLoaded", (event) => {
+        document.getElementById("cleanupButton").addEventListener("click", function () {
+          fetch("/clean-temp-folder")
+            .then((response) => response.text())
+            .then((message) => alert(message))
+            .catch((error) => console.error("Error:", error));
+        });
+      });
+
       function generate_qr_code(str, divId) {
         // Clear existing QR code if any
         var qrContainer = document.getElementById(divId);
@@ -160,6 +169,8 @@
       <input type="text" id="reference" name="reference" /><br /><br />
 
       <button onclick="generateQRCode()">Submit</button>
+
+      <button id="cleanupButton">Clean up temp folder</button>
     </div>
     <br /><br />
     <div id="qrcode"></div>
