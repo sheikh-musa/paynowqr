@@ -88,7 +88,7 @@
           });
       }
 
-      function onQRCodeGenerated(qrImagePath) {
+      function onQRCodeGenerated(qrImagePath, referenceNumber) {
         // Display QR Code
         var qrContainer = document.getElementById("qrcode");
         qrContainer.innerHTML = `<img src="${qrImagePath}" alt="QR Code">`;
