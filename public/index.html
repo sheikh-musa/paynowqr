@@ -93,6 +93,13 @@
         var qrContainer = document.getElementById("qrcode");
         qrContainer.innerHTML = `<img src="${qrImagePath}" alt="QR Code">`;
 
+        // Store reference number for later use
+        const hiddenReferenceField = document.createElement("input");
+        hiddenReferenceField.type = "hidden";
+        hiddenReferenceField.id = "hiddenReferenceNumber";
+        hiddenReferenceField.value = referenceNumber;
+        document.body.appendChild(hiddenReferenceField);
+
         // Start a timer for 180 seconds (3 minutes)
         let timeLeft = 180;
         const timerDisplay = document.getElementById("timerDisplay");
@@ -111,20 +118,13 @@
       }
 
       function checkPaymentStatus() {
-        // Make an AJAX request to your /payment-confirmation endpoint
-        fetch("/payment-confirmation", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            /* Payload if needed */
-          }),
-        })
+        const referenceNumber = document.getElementById("hiddenReferenceNumber").value;
+
+        fetch(`/check-payment-status/${referenceNumber}`)
           .then((response) => response.json())
           .then((data) => {
             // Process the response data
-            if (data.paymentConfirmed) {
+            if (data.confirmed) {
               updateUIForPaymentConfirmation();
             } else {
               updateUIForPaymentFailure();

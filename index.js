@@ -24,7 +24,9 @@ app.get("/", (req, res) => {
 
 function generateQRCode(data, callback) {
   const qrString = generatePayNowStr(data);
-  const tempFileName = `qr-${Date.now()}.png`;
+  const referenceNumber = data.reference;
+  // const tempFileName = `qr-${Date.now()}.png`;
+  const tempFileName = `qr-${referenceNumber}.png`;
   const tempFilePath = path.join(tempDir, tempFileName);
 
   QRCode.toFile(tempFilePath, qrString, (err) => {
@@ -34,7 +36,7 @@ function generateQRCode(data, callback) {
     } else {
       // Convert the file path to a URL accessible from the client
       const accessibleUrl = `/temp/${tempFileName}`;
-      callback(null, accessibleUrl); // Send the URL (not the file system path)
+      callback(null, accessibleUrl, referenceNumber); // Send the URL (not the file system path)
     }
   });
 }
@@ -48,14 +50,16 @@ app.post("/generate-qr", (req, res) => {
     return res.status(400).send("Invalid input parameters");
   }
 
-  generateQRCode(data, (err, tempFilePath) => {
+  generateQRCode(data, (err, tempFilePath, referenceNumber) => {
     if (err) {
       return res.status(500).send("Error generating QR code");
     }
 
     // After QR code is generated, call Google Script Web App
     axios
-      .post("https://script.google.com/macros/s/AKfycbzdjulx_yGSI5tI7nq7U52o3nOa2xP1c7FEEGk4iZ0dmJBXSZtdEH-NEdixFqsqT9JZkw/exec")
+      .post("https://script.google.com/macros/s/AKfycbzdjulx_yGSI5tI7nq7U52o3nOa2xP1c7FEEGk4iZ0dmJBXSZtdEH-NEdixFqsqT9JZkw/exec", {
+        referenceNumber,
+      })
       .then((response) => {
         console.log("Payment check initiated:", response.data);
       })
@@ -65,21 +69,39 @@ app.post("/generate-qr", (req, res) => {
 
     // Send back the full URL to the QR code image
     const qrImageURL = `${req.protocol}://${req.get("host")}${tempFilePath}`;
-    res.json({ qrImagePath: qrImageURL });
+    res.json({ qrImagePath: qrImageURL, referenceNumber: referenceNumber });
   });
 });
 
 let paymentStatus = {}; // Object to store payment status by reference number
 
 app.post("/payment-confirmation", (req, res) => {
-  // When payload is received from Google Script
-  const payload = req.body;
-  // Process and store the payment status
-  const referenceNumber = payload.referenceNumber; // assuming payload contains a reference number
-  paymentStatus[referenceNumber] = {
-    confirmed: true, // or whatever logic you have to determine this
-    // ... other details if necessary
-  };
+  const { body, referenceNumber } = req.body;
+
+  // Regular expressions to extract amount and transaction time
+  const amountRegex = /SGD (\d+\.\d+)/;
+  const timeRegex = /on (\d\d \w+ \d\d:\d\d)/;
+
+  // Extracting amount and time
+  const amountMatch = body.match(amountRegex);
+  const timeMatch = body.match(timeRegex);
+
+  if (amountMatch && timeMatch) {
+    const amount = amountMatch[1];
+    const transactionTime = timeMatch[1];
+
+    paymentStatus[referenceNumber] = {
+      confirmed: true,
+      amount: amount,
+      time: transactionTime,
+    };
+  } else {
+    // Handle the case where the regex does not find a match
+    paymentStatus[referenceNumber] = {
+      confirmed: false,
+    };
+  }
+
   res.send("Payment confirmation processed");
 });
 
