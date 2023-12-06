@@ -58,8 +58,8 @@ app.post("/generate-qr", (req, res) => {
 
     // After QR code is generated, call Google Script Web App
     axios
-      .post("https://script.google.com/macros/s/AKfycbw-K3S0RIcAjeh6dExRZ3t8ENll5Qav1TYG85aqQvhZOY_RWMQIS6TDwY5kDOTxFvpLhw/exec", {
-        //v6
+      .post("https://script.google.com/macros/s/AKfycbyjierMbbtsmkwXrqo7bIzBfB4iVg72xMwlb-O7rWgHiTpae3M1EGNcu7hIymevexMAXA/exec", {
+        //v7 with logging
         referenceNumber,
       })
       .then((response) => {
