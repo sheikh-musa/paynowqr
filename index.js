@@ -43,6 +43,7 @@ function generateQRCode(data, callback) {
 
 // Endpoint to generate QR code
 app.post("/generate-qr", (req, res) => {
+  console.log("Received request at /generate-qr with data:", req.body);
   const data = req.body || req.query;
 
   // Validate input
@@ -71,12 +72,14 @@ app.post("/generate-qr", (req, res) => {
     // Send back the full URL to the QR code image
     const qrImageURL = `${req.protocol}://${req.get("host")}${tempFilePath}`;
     res.json({ qrImagePath: qrImageURL, referenceNumber: referenceNumber });
+    console.log("Sent response from /generate-qr");
   });
 });
 
 let paymentStatus = {}; // Object to store payment status by reference number
 
 app.post("/payment-confirmation", (req, res) => {
+  console.log("Received request at /payment-confirmation with data:", req.body);
   const { body, referenceNumber } = req.body;
 
   // Regular expressions to extract amount and transaction time
@@ -104,6 +107,7 @@ app.post("/payment-confirmation", (req, res) => {
   }
 
   res.send("Payment confirmation processed");
+  console.log("Sent response from /payment-confirmation");
 });
 
 // Additional endpoint to check payment status
