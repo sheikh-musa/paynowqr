@@ -90,7 +90,7 @@
 
       function onQRCodeGenerated(qrImagePath, referenceNumber) {
         // Display QR Code
-        var qrContainer = document.getElementById("qrcode");
+        var qrContainer = document.getElementById("qrCodeContainer");
         qrContainer.innerHTML = `<img src="${qrImagePath}" alt="QR Code">`;
 
         // Store reference number for later use
@@ -147,7 +147,11 @@
 
       function updateUIForError(message) {
         const statusMessage = document.getElementById("statusMessage");
-        statusMessage.innerText = message;
+        statusMessage.innerText = "Payment not confirmed. Please try again.";
+
+        // Clear the QR code or take any other necessary action
+        const qrCodeContainer = document.getElementById("qrcode");
+        qrCodeContainer.innerHTML = "";
       }
     </script>
   </head>
@@ -173,7 +177,7 @@
       <button id="cleanupButton">Clean up temp folder</button>
     </div>
     <br /><br />
-    <div id="qrcode"></div>
+    <div id="qrCodeContainer"></div>
     <p id="statusMessage"></p>
     <p id="timerDisplay"></p>
   </body>
