@@ -5,17 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Paynow QR Generator</title>
     <script src="js/paynow.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <script src="js/epos-2.27.0.js"></script>
+    <script src="js/qrcode.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script> -->
     <script>
-      document.addEventListener("DOMContentLoaded", (event) => {
-        document.getElementById("cleanupButton").addEventListener("click", function () {
-          fetch("/clean-temp-folder")
-            .then((response) => response.text())
-            .then((message) => alert(message))
-            .catch((error) => console.error("Error:", error));
-        });
-      });
-
       function generate_qr_code(str, divId) {
         // Clear existing QR code if any
         var qrContainer = document.getElementById(divId);
@@ -158,8 +151,48 @@
         statusMessage.innerText = "Payment not confirmed. Please try again.";
 
         // Clear the QR code or take any other necessary action
-        const qrCodeContainer = document.getElementById("qrcode");
+        const qrCodeContainer = document.getElementById("qrCodeContainer");
         qrCodeContainer.innerHTML = "";
+      }
+
+      document.addEventListener("DOMContentLoaded", (event) => {
+        document.getElementById("cleanupButton").addEventListener("click", function () {
+          fetch("/clean-temp-folder")
+            .then((response) => response.text())
+            .then((message) => alert(message))
+            .catch((error) => console.error("Error:", error));
+        });
+
+        document.getElementById("printButton").addEventListener("click", function () {
+          ePosDev.connect(address, port, cbConnect, { eposprint: true });
+        });
+      });
+
+      var address = "10.157.1.84";
+      var port = "80"; //8043 for ssl/tls
+      var ePosDev = new epson.ePOSDevice();
+
+      function cbConnect(data) {
+        ePosDev.createDevice("local_printer", ePosDev.DEVICE_TYPE_PRINTER, { crypto: false, buffer: false }, cbCreateDevice_printer); //crypto: true for ssl/tls
+      }
+
+      function cbCreateDevice_printer(devobj, retcode) {
+        var number = document.getElementById("number").value;
+        var amount = document.getElementById("amount").value;
+        var reference = document.getElementById("reference").value;
+        var type = document.querySelector('input[name="mobileUen"]:checked').value;
+        if (retcode == "OK") {
+          var printer = devobj;
+          printer.addText(`${number}\n`);
+          printer.addText(`${amount}\n`);
+          printer.addText(`${reference}\n`);
+          printer.addText(`${type}\n`);
+          printer.addCut(printer.CUT_FEED);
+          printer.send();
+          console.log("Printed");
+        } else {
+          console.log("Error creating device: " + retcode);
+        }
       }
     </script>
   </head>
@@ -183,6 +216,7 @@
       <button onclick="generateQRCode()">Submit</button>
 
       <button id="cleanupButton">Clean up temp folder</button>
+      <button id="printButton">Print Receipt</button>
     </div>
     <br /><br />
     <div id="qrCodeContainer"></div>
